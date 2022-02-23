@@ -25,6 +25,7 @@ function Reset() {
         AudioPlayer.pause();
         AudioPlayer = undefined;
         $('.tmp-' + currentPlay).removeClass('active');
+        $('.tmp-' + currentPlay + ` .previewBtn`).hide();
         currentPlay = 0;
         $('#app').css('background-image', '');
     }
@@ -39,9 +40,11 @@ function readData(fn, num) {
             zip.file(Base64.decode(fn)).async("text").then(function(data) {
                 if (data !== '') {
                     var AFN_N = data.indexOf("AudioFilename");
+                    var PRE_N = data.indexOf("PreviewTime: ");
                     var BG_N = data.indexOf("//Background and Video events");
                     var AudioFileName = String(data.substr(AFN_N + 15, 1000).split("\n")[0].slice(0, -1));
                     var BG_FileName = data.substr(BG_N + 29, 1000).split("\n")[1].split(',')[2].substring(1).slice(0, -1);
+                    var PreviewTime = parseInt(data.substr(PRE_N + 13, 1000).split("\n")[0].slice(0, -1)) / 1000;
                     zip.file(BG_FileName).async("Uint8Array").then(function(data) {
                         var BG_BLOB = new Blob([data]);
                         var BG_DATA = URL.createObjectURL(BG_BLOB);
@@ -49,17 +52,19 @@ function readData(fn, num) {
                     });
                     zip.file(AudioFileName).async("Uint8Array").then(function(data) {
                         $('#app .main .content .loading').hide();
+                        $('.tmp-' + num + ` .previewBtn`).show();
                         var Audio_BLOB = new Blob([data]);
                         var Audio_DATA = URL.createObjectURL(Audio_BLOB);
                         AudioPlayer = new Howl({
                             src: Audio_DATA,
                             html5: true,
-                            preload: true,
-                            onstop: function() {
-                                Reset();
-                            }
+                            preload: true
                         });
                         AudioPlayer.play();
+                        AudioPlayer.seek(PreviewTime);
+                        AudioPlayer.on('end', function() {
+                            Reset();
+                        });
                         currentPlay = num;
                         $('.tmp-' + num).addClass('active');
                         $('.tmp-' + num + ' .pauseBtn').click(function() {
@@ -71,6 +76,10 @@ function readData(fn, num) {
                             AudioPlayer.play();
                             $('.tmp-' + num + ' .pauseBtn').show();
                             $(this).hide();
+                        });
+                        $('.tmp-' + num + ' .previewBtn').click(function() {
+                            AudioPlayer.seek(0);
+                            AudioPlayer.fade(0, 1, 1000);
                         });
                     });
                 } else {
@@ -128,6 +137,7 @@ $('#inputFile').on('change', function(evt) {
                     Log(filename, 1);
                     $('#app .main .selFile .inputAera .loading').hide();
                     $('.nobmLoad').hide();
+                    var loadTime = 0;
                     zip.forEach(function(relativePath, zipEntry, filename) { // 2) print entries
                         var EntryName = zipEntry.name.toString();
                         let randomNum = Math.floor(Math.random() * 1000000);
@@ -135,20 +145,27 @@ $('#inputFile').on('change', function(evt) {
                             $('.fileList #fileLoadded').append(`
                     <div  class="mdui-list-item mdui-ripple Pl-list tmp-` + randomNum + `">
                         <div class="control">
-                            <button onclick='readData("` + Base64.encode(zipEntry.name) + `", "` + randomNum + `")' class="playBtn mdui-btn mdui-btn-icon mdui-ripple">
-                                <i class="mdui-icon material-icons">play_arrow</i>
+                            <button mdui-tooltip="{content: 'Load beatmap file'}" onclick='readData("` + Base64.encode(zipEntry.name) + `", "` + randomNum + `")' class="playBtn mdui-btn mdui-btn-icon mdui-ripple">
+                                <i class="mdui-icon material-icons">cached</i>
                             </button>
-                            <button class="pauseBtn mdui-btn mdui-btn-icon mdui-ripple">
+                            <button mdui-tooltip="{content: 'Pause'}" class="pauseBtn mdui-btn mdui-btn-icon mdui-ripple">
                                 <i class="mdui-icon material-icons">pause</i>
                             </button>
-                            <button class="playTmpBtn mdui-btn mdui-btn-icon mdui-ripple">
+                            <button mdui-tooltip="{content: 'Play'}" class="playTmpBtn mdui-btn mdui-btn-icon mdui-ripple">
                                 <i class="mdui-icon material-icons">play_arrow</i>
                             </button>
+                            <button mdui-tooltip="{content: 'Restart'}" class="previewBtn mdui-btn mdui-btn-icon mdui-ripple">
+                                <i class="mdui-icon material-icons">refresh</i>
+                            </button>
                         </div>
-                        <div class="mdui-list-item-content">` + zipEntry.name + `</div>
+                        <div class="mdui-list-item-content">&nbsp;` + zipEntry.name + `</div>
                         <i class="isPlay mdui-list-item-icon mdui-icon material-icons">chevron_left</i>
                     </div>
                     `);
+                            if (loadTime == 0) {
+                                readData(Base64.encode(zipEntry.name), randomNum);
+                            }
+                            loadTime++;
                         }
                     });
                 }, function(e) {

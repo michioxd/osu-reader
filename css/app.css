@@ -136,9 +136,14 @@ noscript {
     overflow-y: auto;
 }
 
+#app .main .content .fileList .Pl-list .control {
+    display: flex;
+}
+
 #app .main .content .fileList .Pl-list .isPlay,
 #app .main .content .fileList .Pl-list .pauseBtn,
-#app .main .content .fileList .Pl-list .playTmpBtn {
+#app .main .content .fileList .Pl-list .playTmpBtn,
+#app .main .content .fileList .Pl-list .previewBtn {
     display: none;
 }
 
