@@ -118,6 +118,7 @@ noscript {
     z-index: 2;
     display: none;
     background: rgba(0, 0, 0, .5);
+    cursor: inherit;
 }
 
 #app .main .selFile .inputAera .textAera h4.error {
