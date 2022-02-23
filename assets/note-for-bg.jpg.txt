@@ -1,0 +1,1 @@
+background from: https://github.com/ppy/osu-resources/blob/master/osu.Game.Resources/Textures/Intro/Welcome/menu-background.jpg
